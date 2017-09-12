@@ -34,7 +34,7 @@ forecastStart                  2017-09-01T00:00:00.0000000
 forecastEnd                    2017-09-12T23:00:00.0000000
 #>[CmdletBinding()]
     Param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$True)]
         $observations,
         [Parameter(Mandatory=$false)]
         [string]$timeStampColumnName='timestamp',
@@ -43,46 +43,48 @@ forecastEnd                    2017-09-12T23:00:00.0000000
         [Parameter(Mandatory=$false)]
         $intervalCount=336
     )
-    # maxDate set to last observation in the dataset.
-    $maxDate = ($observations | Select-Object -last  1 @{label='timestamp';expression={$_."$timeStampColumnName" }}).timestamp.ToString("o")
+    process {
+        # maxDate set to last observation in the dataset.
+        $maxDate = ($observations | Select-Object -last  1 @{label='timestamp';expression={[DateTime]$_."$timeStampColumnName" }}).timestamp.ToString("o")
 
-    if ($interval -ne 'hour' -and $interval -ne 'day' -and $interval -ne 'month' -and $interval -ne 'year') {
-        throw "Parameter 'interval' must be 'hour', 'day', 'month', or 'year"
-    }
+        if ($interval -ne 'hour' -and $interval -ne 'day' -and $interval -ne 'month' -and $interval -ne 'year') {
+            throw "Parameter 'interval' must be 'hour', 'day', 'month', or 'year"
+        }
 
-    switch ($interval.ToLower()) {
-        'hour' {
-            $startForecastDateTime = [DateTime]::Parse($maxDate).AddHours(1)
-            # Start forecast ONE hour after end of observations
-            $startForecastString = $startForecastDateTime.ToString("o")     
-            # Forcast out X hours from one plus the last date in observations
-            $endForecastString = $startForecastDateTime.AddHours($intervalCount).ToString("o")
-          }
-        'day' {
-            $startForecastDateTime = [DateTime]::Parse($maxDate).AddDays(1)
-            # Start forecast ONE day after end of observations
-            $startForecastString = $startForecastDateTime.ToString("o")     
-            # Forcast out X days from one plus the last date in observations
-            $endForecastString = $startForecastDateTime.AddDays($intervalCount).ToString("o")
-        }
-        'month' {
-            $startForecastDateTime = [DateTime]::Parse($maxDate).AddMonths(1)
-            # Start forecast ONE month after end of observations
-            $startForecastString = $startForecastDateTime.ToString("o")     
-            # Forcast out X months from one plus the last date in observations
-            $endForecastString = $startForecastDateTime.AddMonths($intervalCount).ToString("o")           
-        }
-        'year' {
-            $startForecastDateTime = [DateTime]::Parse($maxDate).AddYears(1)
-            # Start forecast ONE year after end of observations
-            $startForecastString = $startForecastDateTime.ToString("o")     
-            # Forcast out X years from one plus the last date in observations
-            $endForecastString = $startForecastDateTime.AddYears($intervalCount).ToString("o")           
-        }
-    }
-
-    return @{
-                forecastStart = $startForecastString
-                forecastEnd = $endForecastString
+        switch ($interval.ToLower()) {
+            'hour' {
+                $startForecastDateTime = [DateTime]::Parse($maxDate).AddHours(1)
+                # Start forecast ONE hour after end of observations
+                $startForecastString = $startForecastDateTime.ToString("o")     
+                # Forcast out X hours from one plus the last date in observations
+                $endForecastString = $startForecastDateTime.AddHours($intervalCount).ToString("o")
             }
+            'day' {
+                $startForecastDateTime = [DateTime]::Parse($maxDate).AddDays(1)
+                # Start forecast ONE day after end of observations
+                $startForecastString = $startForecastDateTime.ToString("o")     
+                # Forcast out X days from one plus the last date in observations
+                $endForecastString = $startForecastDateTime.AddDays($intervalCount).ToString("o")
+            }
+            'month' {
+                $startForecastDateTime = [DateTime]::Parse($maxDate).AddMonths(1)
+                # Start forecast ONE month after end of observations
+                $startForecastString = $startForecastDateTime.ToString("o")     
+                # Forcast out X months from one plus the last date in observations
+                $endForecastString = $startForecastDateTime.AddMonths($intervalCount).ToString("o")           
+            }
+            'year' {
+                $startForecastDateTime = [DateTime]::Parse($maxDate).AddYears(1)
+                # Start forecast ONE year after end of observations
+                $startForecastString = $startForecastDateTime.ToString("o")     
+                # Forcast out X years from one plus the last date in observations
+                $endForecastString = $startForecastDateTime.AddYears($intervalCount).ToString("o")           
+            }
+        }
+
+        return @{
+                    forecastStart = $startForecastString
+                    forecastEnd = $endForecastString
+                }
+    }
 }

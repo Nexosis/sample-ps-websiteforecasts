@@ -3,10 +3,12 @@
 # if it's completed.
 Function Invoke-NexosisSessionChooser {
     Param(
+        [Parameter(Mandatory=$true)]
         $dataSourceName
     )
-
-    $sessionResponse = (Get-NexosisSession -dataSourceName $dataSourceName)
+    # retrieve all sessions for a given data source
+    $sessionResponse = Get-NexosisSession -dataSourceName $dataSourceName
+    
     # build a table of sessions to choose from
     $script:rowCount=0;
     $sessionResponse | Select-Object @{
@@ -31,15 +33,19 @@ Function Invoke-NexosisSessionChooser {
                     | Out-String `
                     | ForEach-Object { Write-Host $_ }
 
+   if ($sessionResponse.Count -eq 0) {
+       "No sessions were found for data source $($dataSourceName)." | Write-Host
+       return $null
+   }
+
    do {
         $result = Read-Host 'Which session would you like to return? (ctrl-c to exit)'
 
-         if ($result -ge $sessionResponse.Count)  {
-            $result = $null
-            continue;
+         if ($result -ge ($sessionResponse.Count - 1)) {
+            break;
          }
 
     } while (-not ($result -match '\d{1,}'))
 
-    Return Get-NexosisSessionResult -SessionId $sessionResponse[$result].sessionId
+    Get-NexosisSessionResult -SessionId $sessionResponse[$result].sessionId
 }

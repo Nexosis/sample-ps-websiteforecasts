@@ -2,8 +2,11 @@
 # Provides a way to visually choose a dataset. Returns a dataSetData object containing all the
 # data in the dataset
 Function Invoke-NexosisDataSetChooser {
+    [CmdletBinding()]
     Param(
-        $partialName
+        [Parameter(Mandatory=$false)]
+        $partialName,
+        [switch]$noData
     )
     $dataSets = (Get-NexosisDataSet -partialName $partialName) 
     # build a table of dataSets to choose from
@@ -20,16 +23,22 @@ Function Invoke-NexosisDataSetChooser {
         | Out-String `
         | ForEach-Object { Write-Host $_ }
     
-
+   if ($dataSets.Count -eq 0) {
+        "No datasets were found." | Write-Host
+        return $null
+   }
    do {
         $result = Read-Host 'Which dataset would you like to return? (ctrl-c to exit)'
 
-         if ($result -ge $dataSets.Count)  {
-            $result = $null
-            continue;
+         if ($result -ge ($dataSets.Count - 1)) {
+            break;
          }
 
     } while (-not ($result -match '\d{1,}'))
 
-    Return Get-NexosisDataSetData -dataSetName  $dataSets[$result].dataSetName
+    if ($noData) {
+        $dataSets[$result]
+    } else {
+        Get-NexosisAllDataSetData -dataSetName  $dataSets[$result].dataSetName
+    }
 }
