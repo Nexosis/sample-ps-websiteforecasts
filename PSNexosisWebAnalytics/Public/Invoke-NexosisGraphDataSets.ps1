@@ -16,25 +16,16 @@ Function Invoke-NexosisGraphDataSets {
         [string]$sessionResultInterval='day',
         [string]$timeStampColumnName='timestamp',
         [Parameter(Mandatory=$true)]
-        [string]$targetColumnName
+        [string]$targetColumnName,
+        [Parameter(Mandatory=$false)]
+        [int]$maxObservationsToGraph=2000
     )
-
-    # calculate chart boundries (xMin and xMax)
-    $xAxisMinDate = ($historicalObservations | Select-Object -first 1 @{label='timestamp';expression={[DateTime]$_."$timeStampColumnName" }}).timestamp.ToString("o")
-   
-    $maxHistoricalDate = ($historicalObservations | Select-Object -last  1 @{label='timestamp';expression={[DateTime]$_."$timeStampColumnName" }}).timestamp.ToString("o")
-    $maxPredictedDate =  ($sessionResults  | Select-Object -last  1 @{label='timestamp';expression={ ([DateTime]$_."$timeStampColumnName") }}).timestamp.ToString("o")
-    # Choose whichever date is larger: max predict date or max observation date
-    if ((get-date $maxHistoricalDate) -gt (get-date $maxPredictedDate)) {
-        $xAxisMaxDate = $maxHistoricalDate
-    } else {
-        $xAxisMaxDate = $maxPredictedDate
-    }
  
-    $historicalData = Get-NexosisFormatDataForGraphing -interval $sessionResultInterval `
-                                                       -observations $historicalObservations `
-                                                       -timeStampColumnName $timeStampColumnName `
-                                                       -targetColumnName $targetColumnName
+    $historicalData = (Get-NexosisFormatDataForGraphing -interval $sessionResultInterval `
+                                                        -observations $historicalObservations `
+                                                        -timeStampColumnName $timeStampColumnName `
+                                                        -targetColumnName $targetColumnName ) `
+                       | Select-Object -last $maxObservationsToGraph
 
     # Convert Nexosis API Data to graphable dataset (dates converted to OADates)
     $predictedData = Get-NexosisFormatDataForGraphing -interval 'none' `
@@ -66,8 +57,6 @@ Function Invoke-NexosisGraphDataSets {
     $ChartArea.AxisX.LabelStyle.Format = "yyyy-MM-dd"
     $ChartArea.AxisX.Interval = 1
     $ChartArea.AxisX.IntervalType = $DateTimeIntervalType::Months
-    $ChartArea.AxisX.Minimum = ([DateTime]$xAxisMinDate).ToOADate()
-    $ChartArea.AxisX.Maximum = ([DateTime]$xAxisMaxDate).ToOADate()
 
     $Chart.Series.Add($Series)
     $Chart.Series.Add($Series2)
