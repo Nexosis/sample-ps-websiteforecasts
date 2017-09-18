@@ -18,14 +18,14 @@ Function Invoke-NexosisGraphDataSets {
         [Parameter(Mandatory=$true)]
         [string]$targetColumnName,
         [Parameter(Mandatory=$false)]
-        [int]$maxObservationsToGraph=2000
+        [int]$maxHistoricalObservationsToGraph=2000
     )
  
     $historicalData = (Get-NexosisFormatDataForGraphing -interval $sessionResultInterval `
                                                         -observations $historicalObservations `
                                                         -timeStampColumnName $timeStampColumnName `
                                                         -targetColumnName $targetColumnName ) `
-                       | Select-Object -last $maxObservationsToGraph
+                       | Select-Object -last $maxHistoricalObservationsToGraph
 
     # Convert Nexosis API Data to graphable dataset (dates converted to OADates)
     $predictedData = Get-NexosisFormatDataForGraphing -interval 'none' `
